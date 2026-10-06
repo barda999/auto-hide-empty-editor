@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.2
+
+- With a file open, the layout now matches VS Code's default: Claude Code in the Secondary Side Bar and the Terminal in a bottom Panel that runs under the editor and Claude Code. The stacked right-hand Panel is used only when no files are open.
+
 ## 0.1.1
 
 - Fix: if Claude Code had been moved out of the Panel (for example back to the Secondary Side Bar), closing the last file showed only the Terminal, maximized. Claude Code and the Terminal are now moved back into the Panel tab before the editor collapses.

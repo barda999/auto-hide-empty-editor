@@ -10,24 +10,25 @@ No files open:   Explorer │ Claude Code
                           │ Terminal
 
 File open:       Explorer │ Editor │ Claude Code
-                          │        │ ───────────
-                          │        │ Terminal
+                          │ ────────────────────
+                          │ Terminal
 ```
+
+With a file open you get VS Code's usual layout: Claude Code in the Secondary Side Bar and the Terminal in a bottom Panel that runs under both the editor and Claude Code.
 
 ## Requirements
 
 - VS Code 1.140 or later
 - The [Claude Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension
 
-## What happens on first run
+## What it changes
 
-The first time the extension runs with Claude Code installed, it arranges your layout once:
+The first time the extension runs with Claude Code installed, it runs **View: Reset View Locations**, so any views you have moved yourself go back to their default places.
 
-- The Panel is docked on the right.
-- Claude Code and the Terminal are moved into one Panel tab, with Claude Code on top and the Terminal below.
-- The Secondary Side Bar is closed.
+After that, whenever you close the last file or open the first one, it moves Claude Code, the Terminal and the Panel into the layouts shown above:
 
-To do this, it first runs **View: Reset View Locations**, so any views you have moved yourself go back to their default places. After that the extension leaves your layout alone; rearrange things however you like.
+- No files open: the Panel is docked on the right and maximized, Claude Code and the Terminal share one Panel tab, and the Secondary Side Bar is closed.
+- File open: the Panel is docked at the bottom and aligned right, the Terminal goes back to it, and Claude Code goes back to the Secondary Side Bar.
 
 ## Tips
 
@@ -40,6 +41,7 @@ Disable or uninstall the extension, then run these from the Command Palette:
 
 1. **View: Reset View Locations**
 2. **View: Move Panel Bottom**
+3. **View: Set Panel Alignment to Center**
 
 ## Disclaimer
 

@@ -19,9 +19,17 @@ const PANEL_HOST = "workbench.view.extension.autoHideEmptyEditor-panelHost";
 
 const CLAUDE_EXTENSION = "anthropic.claude-code";
 
-// Claude Code registers one of these depending on the VS Code version.
-const CLAUDE_VIEWS = ["claudeVSCodeSidebarSecondary", "claudeVSCodeSidebar"];
+// Claude Code registers one of these views depending on the VS Code version,
+// each in its own default container.
+const CLAUDE_CONTAINERS: Record<string, string> = {
+  claudeVSCodeSidebarSecondary:
+    "workbench.view.extension.claude-sidebar-secondary",
+  claudeVSCodeSidebar: "workbench.view.extension.claude-sidebar",
+};
+const CLAUDE_VIEWS = Object.keys(CLAUDE_CONTAINERS);
+
 const TERMINAL_VIEW = "terminal";
+const TERMINAL_CONTAINER = "terminal";
 
 export async function activate(context: vscode.ExtensionContext) {
   let hadEditors: boolean | undefined;
@@ -33,10 +41,10 @@ export async function activate(context: vscode.ExtensionContext) {
     context.workspaceState.update(EDITOR_HIDDEN_KEY, value);
 
   async function collapse() {
+    if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
+      await gatherViews().catch(logError);
+    }
     if (!editorHidden()) {
-      if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
-        await gatherViews().catch(logError);
-      }
       // Hides the editor area and lets the Panel fill its space.
       await vscode.commands.executeCommand(
         "workbench.action.toggleMaximizedPanel",
@@ -49,6 +57,9 @@ export async function activate(context: vscode.ExtensionContext) {
     // When an editor opens, VS Code brings the editor area back by itself;
     // we only need to forget that we hid it.
     await setEditorHidden(false);
+    if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
+      await spreadViews().catch(logError);
+    }
   }
 
   async function sync() {
@@ -75,8 +86,14 @@ export async function activate(context: vscode.ExtensionContext) {
     ) {
       return;
     }
-    await arrangeViews().catch(logError);
+    // Start from VS Code's defaults so earlier moves don't get in the way.
+    await vscode.commands
+      .executeCommand("workbench.action.resetViewLocations")
+      .then(undefined, logError);
     await context.globalState.update(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
+    // Lay the views out again for whether files are open right now.
+    hadEditors = undefined;
+    scheduleSync();
   }
 
   context.subscriptions.push(
@@ -87,20 +104,11 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await setUpLayoutOnce();
-  if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
-    await gatherViews().catch(logError);
-  }
   scheduleSync();
 }
 
-// Puts Claude Code and the Terminal together in one right-docked Panel tab,
-// Claude Code on top and the Terminal below it.
-async function arrangeViews() {
-  // Start from VS Code's defaults so earlier moves don't get in the way.
-  await vscode.commands.executeCommand("workbench.action.resetViewLocations");
-  await gatherViews();
-}
-
+// No files open: puts Claude Code and the Terminal together in one
+// right-docked Panel tab, Claude Code on top and the Terminal below it.
 async function gatherViews() {
   await vscode.commands.executeCommand("workbench.action.positionPanelRight");
   await vscode.commands.executeCommand("vscode.moveViews", {
@@ -109,6 +117,28 @@ async function gatherViews() {
   });
   // Only Chat is left in the Secondary Side Bar; keep it out of the way.
   await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
+}
+
+// Files open: VS Code's default layout. Claude Code goes back to the Secondary
+// Side Bar and the Terminal to a bottom Panel that runs under both the editor
+// and the Secondary Side Bar.
+async function spreadViews() {
+  await vscode.commands.executeCommand("workbench.action.positionPanelBottom");
+  await vscode.commands.executeCommand("workbench.action.alignPanelRight");
+  await vscode.commands.executeCommand("vscode.moveViews", {
+    viewIds: [TERMINAL_VIEW],
+    destinationId: TERMINAL_CONTAINER,
+  });
+  for (const [viewId, containerId] of Object.entries(CLAUDE_CONTAINERS)) {
+    await vscode.commands.executeCommand("vscode.moveViews", {
+      viewIds: [viewId],
+      destinationId: containerId,
+    });
+  }
+  // Moving views focuses them; hand focus back to the file that just opened.
+  await vscode.commands.executeCommand(
+    "workbench.action.focusActiveEditorGroup",
+  );
 }
 
 function countTabs(): number {
