@@ -34,8 +34,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   async function collapse() {
     if (!editorHidden()) {
-      // The Panel is what fills the space, so make sure Claude Code is in it.
-      // Views can be moved after the first-run setup (by hand, or by a reset).
       if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
         await gatherViews().catch(logError);
       }
@@ -92,8 +90,8 @@ export async function activate(context: vscode.ExtensionContext) {
   scheduleSync();
 }
 
-// First-run setup: puts Claude Code and the Terminal together in one
-// right-docked Panel tab, Claude Code on top and the Terminal below it.
+// Puts Claude Code and the Terminal together in one right-docked Panel tab,
+// Claude Code on top and the Terminal below it.
 async function arrangeViews() {
   // Start from VS Code's defaults so earlier moves don't get in the way.
   await vscode.commands.executeCommand("workbench.action.resetViewLocations");
@@ -101,8 +99,6 @@ async function arrangeViews() {
   await gatherViews();
 }
 
-// Moves Claude Code and the Terminal into our Panel tab. Views already there
-// stay put, so this is safe to run repeatedly.
 async function gatherViews() {
   await vscode.commands.executeCommand("vscode.moveViews", {
     viewIds: [...CLAUDE_VIEWS, TERMINAL_VIEW],
