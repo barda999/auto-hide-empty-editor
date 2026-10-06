@@ -34,6 +34,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
   async function collapse() {
     if (!editorHidden()) {
+      // The Panel is what fills the space, so make sure Claude Code is in it.
+      // Views can be moved after the first-run setup (by hand, or by a reset).
+      if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
+        await gatherViews().catch(logError);
+      }
       // Hides the editor area and lets the Panel fill its space.
       await vscode.commands.executeCommand(
         "workbench.action.toggleMaximizedPanel",
@@ -87,21 +92,24 @@ export async function activate(context: vscode.ExtensionContext) {
   scheduleSync();
 }
 
-// Puts Claude Code and the Terminal together in one right-docked Panel tab,
-// Claude Code on top and the Terminal below it.
+// First-run setup: puts Claude Code and the Terminal together in one
+// right-docked Panel tab, Claude Code on top and the Terminal below it.
 async function arrangeViews() {
-  const run = (command: string, ...args: unknown[]) =>
-    vscode.commands.executeCommand(command, ...args);
-
   // Start from VS Code's defaults so earlier moves don't get in the way.
-  await run("workbench.action.resetViewLocations");
-  await run("workbench.action.positionPanelRight");
-  await run("vscode.moveViews", {
+  await vscode.commands.executeCommand("workbench.action.resetViewLocations");
+  await vscode.commands.executeCommand("workbench.action.positionPanelRight");
+  await gatherViews();
+}
+
+// Moves Claude Code and the Terminal into our Panel tab. Views already there
+// stay put, so this is safe to run repeatedly.
+async function gatherViews() {
+  await vscode.commands.executeCommand("vscode.moveViews", {
     viewIds: [...CLAUDE_VIEWS, TERMINAL_VIEW],
     destinationId: PANEL_HOST,
   });
   // Only Chat is left in the Secondary Side Bar; keep it out of the way.
-  await run("workbench.action.closeAuxiliaryBar");
+  await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
 }
 
 function countTabs(): number {

@@ -2,7 +2,7 @@
   "name": "auto-hide-empty-editor",
   "displayName": "Auto Hide Empty Editor",
   "description": "Hides the empty editor area so Claude Code and the Terminal fill the window when no files are open.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "bardiazamanian",
   "icon": "resources/icon.png",
   "license": "MIT",
