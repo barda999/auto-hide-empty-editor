@@ -87,6 +87,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   await setUpLayoutOnce();
+  if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
+    await gatherViews().catch(logError);
+  }
   scheduleSync();
 }
 
@@ -95,11 +98,11 @@ export async function activate(context: vscode.ExtensionContext) {
 async function arrangeViews() {
   // Start from VS Code's defaults so earlier moves don't get in the way.
   await vscode.commands.executeCommand("workbench.action.resetViewLocations");
-  await vscode.commands.executeCommand("workbench.action.positionPanelRight");
   await gatherViews();
 }
 
 async function gatherViews() {
+  await vscode.commands.executeCommand("workbench.action.positionPanelRight");
   await vscode.commands.executeCommand("vscode.moveViews", {
     viewIds: [...CLAUDE_VIEWS, TERMINAL_VIEW],
     destinationId: PANEL_HOST,
