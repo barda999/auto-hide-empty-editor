@@ -143,8 +143,17 @@ async function spreadViews() {
 
 function countTabs(): number {
   return vscode.window.tabGroups.all.reduce(
-    (total, group) => total + group.tabs.length,
+    (total, group) =>
+      total + group.tabs.filter((tab) => !isClaudeDiff(tab)).length,
     0,
+  );
+}
+
+function isClaudeDiff(tab: vscode.Tab): boolean {
+  return (
+    tab.input instanceof vscode.TabInputTextDiff &&
+    (tab.input.original.scheme.startsWith("_claude_") ||
+      tab.input.modified.scheme.startsWith("_claude_"))
   );
 }
 
