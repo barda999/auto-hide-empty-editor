@@ -40,10 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const setEditorHidden = (value: boolean) =>
     context.workspaceState.update(EDITOR_HIDDEN_KEY, value);
 
-  async function collapse() {
-    if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
-      await gatherViews().catch(logError);
-    }
+  async function hideEditor() {
     if (!editorHidden()) {
       // Hides the editor area and lets the Panel fill its space.
       await vscode.commands.executeCommand(
@@ -53,21 +50,23 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  async function expand() {
-    // When an editor opens, VS Code brings the editor area back by itself;
-    // we only need to forget that we hid it.
-    await setEditorHidden(false);
-    if (vscode.extensions.getExtension(CLAUDE_EXTENSION)) {
-      await spreadViews().catch(logError);
-    }
-  }
-
   async function sync() {
-    const hasEditors = countTabs() > 0;
-    if (hasEditors !== hadEditors) {
-      await (hasEditors ? expand() : collapse());
+    const tabs = allTabs();
+    const hasEditors = tabs.some((tab) => !isClaudeDiff(tab));
+    if (
+      hasEditors !== hadEditors &&
+      vscode.extensions.getExtension(CLAUDE_EXTENSION)
+    ) {
+      await (hasEditors ? spreadViews() : gatherViews()).catch(logError);
     }
     hadEditors = hasEditors;
+    if (tabs.length > 0) {
+      // When an editor opens, VS Code brings the editor area back by itself;
+      // we only need to forget that we hid it.
+      await setEditorHidden(false);
+    } else {
+      await hideEditor();
+    }
   }
 
   function scheduleSync() {
@@ -141,12 +140,8 @@ async function spreadViews() {
   );
 }
 
-function countTabs(): number {
-  return vscode.window.tabGroups.all.reduce(
-    (total, group) =>
-      total + group.tabs.filter((tab) => !isClaudeDiff(tab)).length,
-    0,
-  );
+function allTabs(): vscode.Tab[] {
+  return vscode.window.tabGroups.all.flatMap((group) => group.tabs);
 }
 
 function isClaudeDiff(tab: vscode.Tab): boolean {

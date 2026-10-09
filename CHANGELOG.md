@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.4
+
+- Fix: after approving a Claude Code edit with no files open, the empty editor area stayed on screen. Opening the approval diff brings the editor area back, and it is now hidden again once the diff closes.
+
 ## 0.1.3
 
 - Fix: approving a Claude Code edit with no files open failed with "Tool permission stream closed before response received". The approval diff tab counted as an open file, so Claude Code was moved back to the Secondary Side Bar, which reloaded it mid-prompt. Claude Code's diff tabs no longer change the layout.
